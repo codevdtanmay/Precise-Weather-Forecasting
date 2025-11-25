@@ -9,8 +9,8 @@ export default async function Home() {
     month: 'long',
     day: 'numeric',
   });
-  const defaultLocation = 'San Francisco, CA';
-  const historicalDataText = `On this day in the past, San Francisco experienced mild temperatures around 60°F with intermittent fog clearing by the afternoon. Winds were light from the west. No significant precipitation was recorded.`;
+  const defaultLocation = 'Mumbai, MH';
+  const historicalDataText = `On this day in the past, Mumbai experienced warm and humid conditions with temperatures around 88°F (31°C). Skies were partly cloudy with a chance of afternoon showers. Winds were moderate from the southwest.`;
 
   let historicalSummary = { summary: 'Historical weather data is currently unavailable. Please check your Gemini API key.' };
 
