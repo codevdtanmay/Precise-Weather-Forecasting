@@ -1,7 +1,7 @@
 'use client';
 
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useForm, FormProvider, useFormContext } from 'react-hook-form';
+import { useForm, FormProvider } from 'react-hook-form';
 import {
   Form,
   FormControl,
@@ -9,6 +9,7 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
+  useFormContext,
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -125,6 +126,10 @@ export default function WeatherForm({ historicalDataText, presetForecasts }: Wea
 
   const selectedCountry = form.watch('country');
   const selectedState = form.watch('state');
+  
+  const currentCity = form.watch('city');
+  const displayForecast = state.data || presetForecasts.find(p => p.name === currentCity)?.forecast || null;
+
 
   return (
     <Card className="shadow-lg">
@@ -276,7 +281,7 @@ export default function WeatherForm({ historicalDataText, presetForecasts }: Wea
             <SubmitButton />
           </form>
         </FormProvider>
-        {state.data && <WeatherDisplay forecast={state.data} />}
+        {displayForecast && <WeatherDisplay forecast={displayForecast} />}
       </CardContent>
     </Card>
   );
