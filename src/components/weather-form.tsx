@@ -169,29 +169,20 @@ export default function WeatherForm({ historicalDataText }: { historicalDataText
 
   // Use a ref to track if the toast has been shown for the current error
   const errorToastIdRef = React.useRef<string | number | undefined>(undefined);
-  if (state.error) {
-    // Only show toast if the error message is different from the last one
-    if (errorToastIdRef.current !== state.error) {
-       toast({
+  
+  React.useEffect(() => {
+    if (state.error && errorToastIdRef.current !== state.error) {
+      toast({
         variant: 'destructive',
         title: 'An error occurred',
         description: state.error,
       });
-      // Store the current error message in the ref
       errorToastIdRef.current = state.error;
+    } else if (!state.error) {
+      errorToastIdRef.current = undefined;
     }
-  } else {
-    // Reset the ref if there is no error
-    errorToastIdRef.current = undefined;
-  }
+  }, [state.error, toast]);
 
-  const handleFormSubmit = (data: WeatherFormData) => {
-    const formData = new FormData();
-    for (const key in data) {
-      formData.append(key, (data as any)[key]);
-    }
-    formAction(formData);
-  };
 
   return (
     <Card className="shadow-lg">
@@ -209,7 +200,7 @@ export default function WeatherForm({ historicalDataText }: { historicalDataText
       </CardHeader>
       <CardContent>
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(handleFormSubmit)} className="space-y-8">
+          <form action={formAction} className="space-y-8">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               <FormField
                 control={form.control}
