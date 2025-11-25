@@ -2,10 +2,14 @@ import { CloudSun } from 'lucide-react';
 import { summarizeHistoricalWeatherData } from '@/ai/flows/summarize-historical-weather-data';
 import WeatherForm from '@/components/weather-form';
 import HistoricalWeather from '@/components/historical-weather';
-import { generateWeatherForecast } from '@/ai/flows/generate-weather-forecast';
+import { generateWeatherForecast, GenerateWeatherForecastOutput } from '@/ai/flows/generate-weather-forecast';
 import { presets } from '@/lib/presets';
 import WeatherDisplay from '@/components/weather-display';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import WeatherTable from '@/components/weather-table';
+import WeatherChart from '@/components/weather-chart';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+
 
 export default async function Home() {
   const currentDate = new Date().toLocaleDateString('en-US', {
@@ -17,7 +21,7 @@ export default async function Home() {
   const historicalDataText = `On this day in the past, Mumbai experienced warm and humid conditions with temperatures around 88°F (31°C). Skies were partly cloudy with a chance of afternoon showers. Winds were moderate from the southwest.`;
 
   let historicalSummary = { summary: 'Historical weather data is currently unavailable. Please check your Gemini API key.' };
-  let presetForecasts: { title: string; forecast: string; }[] = [];
+  let presetForecasts: { title: string; forecast: GenerateWeatherForecastOutput; }[] = [];
 
   if (process.env.GEMINI_API_KEY) {
     try {
@@ -34,7 +38,7 @@ export default async function Home() {
       historicalSummary = summary;
       presetForecasts = forecasts.map((f, i) => ({
         title: `Example Forecast for ${presets[i].city}`,
-        forecast: f.weeklyForecast
+        forecast: f
       }));
 
     } catch (error) {
@@ -74,13 +78,23 @@ export default async function Home() {
                     Here are some examples of AI-generated forecasts.
                   </CardDescription>
                 </CardHeader>
-                <CardContent className="space-y-4">
+                <CardContent className="space-y-6">
                   {presetForecasts.map((pf, index) => (
                     <div key={index}>
-                      <h3 className="font-bold text-lg">{pf.title}</h3>
-                       <div className="prose prose-sm dark:prose-invert max-w-none whitespace-pre-wrap p-4 rounded-md bg-primary/10 border-primary/20">
-                        {pf.forecast}
-                      </div>
+                      <h3 className="font-bold text-lg mb-2">{pf.title}</h3>
+                       <p className='text-sm text-muted-foreground mb-4'>{pf.forecast.summary}</p>
+                       <Tabs defaultValue="chart">
+                        <TabsList className='grid w-full grid-cols-2'>
+                          <TabsTrigger value="chart">Chart</TabsTrigger>
+                          <TabsTrigger value="table">Table</TabsTrigger>
+                        </TabsList>
+                        <TabsContent value="chart">
+                          <WeatherChart data={pf.forecast.weeklyForecast} />
+                        </TabsContent>
+                        <TabsContent value="table">
+                          <WeatherTable data={pf.forecast.weeklyForecast} />
+                        </TabsContent>
+                       </Tabs>
                     </div>
                   ))}
                 </CardContent>

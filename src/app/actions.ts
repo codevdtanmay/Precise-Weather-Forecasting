@@ -1,12 +1,10 @@
 'use server';
 
-import { generateWeatherForecast } from '@/ai/flows/generate-weather-forecast';
+import { GenerateWeatherForecastOutput, generateWeatherForecast } from '@/ai/flows/generate-weather-forecast';
 import { weatherFormSchema } from '@/lib/schemas';
 
 interface FormState {
-  data: {
-    weeklyForecast: string;
-  } | null;
+  data: GenerateWeatherForecastOutput | null;
   error: string | null;
 }
 

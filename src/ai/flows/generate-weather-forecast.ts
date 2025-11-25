@@ -32,8 +32,16 @@ const GenerateWeatherForecastInputSchema = z.object({
 });
 export type GenerateWeatherForecastInput = z.infer<typeof GenerateWeatherForecastInputSchema>;
 
+const DailyForecastSchema = z.object({
+  day: z.string().describe("Day of the week (e.g., Monday)."),
+  highTemp: z.number().describe("The high temperature for the day in Celsius."),
+  lowTemp: z.number().describe("The low temperature for the day in Celsius."),
+  conditions: z.string().describe("A brief description of the weather conditions (e.g., 'Sunny with scattered clouds')."),
+});
+
 const GenerateWeatherForecastOutputSchema = z.object({
-  weeklyForecast: z.string().describe('A detailed weather forecast for the next 7 days, including temperature and conditions.'),
+  summary: z.string().describe("A brief summary of the week's weather outlook."),
+  weeklyForecast: z.array(DailyForecastSchema).describe('A 7-day weather forecast.'),
 });
 export type GenerateWeatherForecastOutput = z.infer<typeof GenerateWeatherForecastOutputSchema>;
 
@@ -45,7 +53,7 @@ const prompt = ai.definePrompt({
   name: 'generateWeatherForecastPrompt',
   input: {schema: GenerateWeatherForecastInputSchema},
   output: {schema: GenerateWeatherForecastOutputSchema},
-  prompt: `You are an expert meteorologist. Based on the provided atmospheric data, generate a detailed weather forecast for the next 7 days for {{{city}}}, {{{state}}}, {{{country}}}.
+  prompt: `You are an expert meteorologist. Based on the provided atmospheric data, generate a detailed 7-day weather forecast for {{{city}}}, {{{state}}}, {{{country}}}. Provide a general summary and then a day-by-day breakdown with high/low temperatures in Celsius and weather conditions.
 
 Atmospheric Data:
 Humidity: {{{humidity}}}%

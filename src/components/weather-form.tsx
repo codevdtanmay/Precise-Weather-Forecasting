@@ -65,8 +65,8 @@ const textAreaFields = [
 ];
 
 function SubmitButton() {
-  const [pending, setPending] = useState(false);
   const form = useFormContext();
+  const [pending, setPending] = useState(false);
 
   if (!form) {
     return (
@@ -76,10 +76,9 @@ function SubmitButton() {
         </Button>
     )
   }
-
+  
   useEffect(() => {
-    const subscription = form.formState.isSubmitting;
-    setPending(subscription);
+    setPending(form.formState.isSubmitting);
   }, [form.formState.isSubmitting]);
 
 
@@ -114,15 +113,6 @@ export default function WeatherForm({ historicalDataText }: { historicalDataText
     defaultValues: presets[0],
   });
 
-  const loadNextPreset = () => {
-    const nextIndex = (presetIndex + 1) % presets.length;
-    form.reset(presets[nextIndex]);
-    setPresetIndex(nextIndex);
-  };
-
-  const selectedCountry = form.watch('country');
-  const selectedState = form.watch('state');
-
   useEffect(() => {
     if (state.error) {
       toast({
@@ -132,6 +122,16 @@ export default function WeatherForm({ historicalDataText }: { historicalDataText
       });
     }
   }, [state.error, toast]);
+
+
+  const loadNextPreset = () => {
+    const nextIndex = (presetIndex + 1) % presets.length;
+    form.reset(presets[nextIndex]);
+    setPresetIndex(nextIndex);
+  };
+
+  const selectedCountry = form.watch('country');
+  const selectedState = form.watch('state');
 
 
   return (
@@ -274,7 +274,7 @@ export default function WeatherForm({ historicalDataText }: { historicalDataText
             <SubmitButton />
           </form>
         </Form>
-        {state.data && <WeatherDisplay forecast={state.data.weeklyForecast} />}
+        {state.data && <WeatherDisplay forecast={state.data} />}
       </CardContent>
     </Card>
   );
