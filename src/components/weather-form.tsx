@@ -170,18 +170,16 @@ export default function WeatherForm({ historicalDataText }: { historicalDataText
   // Use a ref to track if the toast has been shown for the current error
   const errorToastIdRef = React.useRef<string | number | undefined>(undefined);
   
-  React.useEffect(() => {
-    if (state.error && errorToastIdRef.current !== state.error) {
-      toast({
-        variant: 'destructive',
-        title: 'An error occurred',
-        description: state.error,
-      });
-      errorToastIdRef.current = state.error;
-    } else if (!state.error) {
-      errorToastIdRef.current = undefined;
-    }
-  }, [state.error, toast]);
+  if (state.error && errorToastIdRef.current !== state.error) {
+    toast({
+      variant: 'destructive',
+      title: 'An error occurred',
+      description: state.error,
+    });
+    errorToastIdRef.current = state.error;
+  } else if (!state.error) {
+    errorToastIdRef.current = undefined;
+  }
 
 
   return (
