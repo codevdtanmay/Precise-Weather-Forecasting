@@ -35,8 +35,9 @@ import {
   Globe,
   MapPin,
   Building,
+  Wand,
 } from 'lucide-react';
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useActionState } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { Textarea } from './ui/textarea';
@@ -64,6 +65,66 @@ const textAreaFields = [
   { name: 'cloudSourceData', label: 'Cloud Source Data', icon: Cloud, placeholder: 'Describe cloud source data...' },
 ];
 
+const presets: WeatherFormData[] = [
+  { // Default/Rainy Mumbai
+    country: 'IN',
+    state: 'MH',
+    city: 'Mumbai',
+    humidity: 85,
+    windSpeed: 20,
+    airPressure: 1002,
+    rainfallAmount: 15,
+    uvIndex: 3,
+    soilMoisture: 75,
+    soilTemperature: 26,
+    fogDensity: 10,
+    airQuality: 'Good',
+    visibility: 5,
+    satelliteImages: 'Widespread dense cloud cover observed over the coastal areas.',
+    radarData: 'Continuous moderate to heavy rainfall detected across the city.',
+    historicalData: 'On this day in the past, Mumbai experienced warm and humid conditions with temperatures around 88°F (31°C). Skies were partly cloudy with a chance of afternoon showers. Winds were moderate from the southwest.',
+    cloudSourceData: 'Strong monsoon currents from the Arabian Sea are feeding moisture.',
+  },
+  { // Sunny Delhi
+    country: 'IN',
+    state: 'DL',
+    city: 'New Delhi',
+    humidity: 30,
+    windSpeed: 8,
+    airPressure: 1015,
+    rainfallAmount: 0,
+    uvIndex: 9,
+    soilMoisture: 25,
+    soilTemperature: 38,
+    fogDensity: 0,
+    airQuality: 'Unhealthy for Sensitive Groups',
+    visibility: 10,
+    satelliteImages: 'Clear skies visible across the entire northern plains.',
+    radarData: 'No precipitation detected in the vicinity.',
+    historicalData: 'Historically, this time of year in Delhi is characterized by dry heat and clear skies.',
+    cloudSourceData: 'Very dry continental air mass with no significant moisture source.',
+  },
+  { // Foggy Bengaluru
+    country: 'IN',
+    state: 'KA',
+    city: 'Bengaluru',
+    humidity: 95,
+    windSpeed: 5,
+    airPressure: 1010,
+    rainfallAmount: 1,
+    uvIndex: 2,
+    soilMoisture: 65,
+    soilTemperature: 21,
+    fogDensity: 80,
+    airQuality: 'Moderate',
+    visibility: 1,
+    satelliteImages: 'Low-level stratus clouds and fog covering the Deccan plateau.',
+    radarData: 'Occasional light drizzle detected, but no significant rain bands.',
+    historicalData: 'Mornings in Bengaluru during this season often feature dense fog, clearing by noon.',
+    cloudSourceData: 'Local moisture condensation due to temperature inversion.',
+  }
+];
+
 function SubmitButton() {
   const { pending } = useFormStatus();
   return (
@@ -89,29 +150,19 @@ export default function WeatherForm({ historicalDataText }: { historicalDataText
     data: null,
     error: null,
   });
+  
+  const [presetIndex, setPresetIndex] = useState(0);
 
   const form = useForm<WeatherFormData>({
     resolver: zodResolver(weatherFormSchema),
-    defaultValues: {
-      country: 'IN',
-      state: 'MH',
-      city: 'Mumbai',
-      humidity: 75,
-      windSpeed: 15,
-      airPressure: 1005,
-      rainfallAmount: 2,
-      uvIndex: 6,
-      soilMoisture: 60,
-      soilTemperature: 28,
-      fogDensity: 5,
-      airQuality: 'Moderate',
-      visibility: 8,
-      satelliteImages: 'Partly cloudy skies with some convective cloud development.',
-      radarData: 'Light to moderate rain showers detected in the region.',
-      historicalData: historicalDataText,
-      cloudSourceData: 'Moisture from the Arabian Sea is the primary source of clouds.',
-    },
+    defaultValues: presets[0],
   });
+
+  const loadNextPreset = () => {
+    const nextIndex = (presetIndex + 1) % presets.length;
+    form.reset(presets[nextIndex]);
+    setPresetIndex(nextIndex);
+  };
 
   const selectedCountry = form.watch('country');
   const selectedState = form.watch('state');
@@ -129,8 +180,16 @@ export default function WeatherForm({ historicalDataText }: { historicalDataText
   return (
     <Card className="shadow-lg">
       <CardHeader>
-        <CardTitle className="font-headline text-2xl">Atmospheric Data Input</CardTitle>
-        <CardDescription>Enter the location and current weather metrics to generate a forecast.</CardDescription>
+        <div className="flex items-center justify-between">
+          <div>
+            <CardTitle className="font-headline text-2xl">Atmospheric Data Input</CardTitle>
+            <CardDescription>Enter the location and current weather metrics to generate a forecast.</CardDescription>
+          </div>
+          <Button variant="outline" onClick={loadNextPreset}>
+            <Wand className="mr-2 h-4 w-4" />
+            Load Example
+          </Button>
+        </div>
       </CardHeader>
       <CardContent>
         <Form {...form}>
@@ -142,7 +201,7 @@ export default function WeatherForm({ historicalDataText }: { historicalDataText
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel className="flex items-center gap-2"><Globe className="h-4 w-4 text-primary" />Country</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <Select onValueChange={field.onChange} value={field.value}>
                       <FormControl>
                         <SelectTrigger><SelectValue placeholder="Select a country" /></SelectTrigger>
                       </FormControl>
@@ -210,7 +269,7 @@ export default function WeatherForm({ historicalDataText }: { historicalDataText
                         {label}
                       </FormLabel>
                       <FormControl>
-                        <Input placeholder={placeholder} {...field} />
+                        <Input placeholder={placeholder} {...field} type={typeof field.value === 'number' ? 'number' : 'text'} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
