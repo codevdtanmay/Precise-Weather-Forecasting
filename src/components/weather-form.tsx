@@ -1,7 +1,7 @@
 'use client';
 
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useForm, FormProvider } from 'react-hook-form';
+import { useForm, FormProvider, useFormContext } from 'react-hook-form';
 import {
   Form,
   FormControl,
@@ -9,7 +9,6 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-  useFormContext,
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -66,25 +65,6 @@ const textAreaFields = [
   { name: 'historicalData', label: 'Historical Data Context', icon: History, placeholder: 'Summary of past weather...' },
   { name: 'cloudSourceData', label: 'Cloud Source Data', icon: Cloud, placeholder: 'Describe cloud source data...' },
 ];
-
-function SubmitButton() {
-  const { formState: { isSubmitting } } = useFormContext<WeatherFormData>();
-  return (
-    <Button type="submit" disabled={isSubmitting} className="w-full">
-      {isSubmitting ? (
-        <>
-          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-          Generating Forecast...
-        </>
-      ) : (
-        <>
-          <Bot className="mr-2 h-4 w-4" />
-          Generate Forecast
-        </>
-      )}
-    </Button>
-  );
-}
 
 interface WeatherFormProps {
   historicalDataText: string;
@@ -277,8 +257,6 @@ export default function WeatherForm({ historicalDataText, presetForecasts }: Wea
                 />
               ))}
             </div>
-
-            <SubmitButton />
           </form>
         </FormProvider>
         {displayForecast && <WeatherDisplay forecast={displayForecast} />}
