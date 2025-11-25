@@ -167,15 +167,20 @@ export default function WeatherForm({ historicalDataText }: { historicalDataText
   const selectedCountry = form.watch('country');
   const selectedState = form.watch('state');
 
-  useEffect(() => {
-    if (state.error) {
+  // Use a ref to track if the toast has been shown for the current error
+  const errorToastIdRef = React.useRef<string | number | undefined>(undefined);
+  if (state.error) {
+    if (errorToastIdRef.current !== state.error) {
       toast({
         variant: 'destructive',
         title: 'An error occurred',
         description: state.error,
       });
+      errorToastIdRef.current = state.error;
     }
-  }, [state.error, toast]);
+  } else {
+    errorToastIdRef.current = undefined;
+  }
 
   return (
     <Card className="shadow-lg">
