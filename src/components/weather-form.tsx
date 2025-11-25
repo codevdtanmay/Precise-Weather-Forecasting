@@ -1,7 +1,7 @@
 'use client';
 
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useForm, FormProvider } from 'react-hook-form';
+import { useForm, FormProvider, useFormContext } from 'react-hook-form';
 import {
   Form,
   FormControl,
@@ -9,7 +9,6 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-  useFormContext,
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -100,7 +99,6 @@ export default function WeatherForm({ historicalDataText, presetForecasts }: Wea
   });
   
   const [presetIndex, setPresetIndex] = useState(0);
-  const [displayedForecast, setDisplayedForecast] = useState<GenerateWeatherForecastOutput | null>(null);
 
   const form = useForm<WeatherFormData>({
     resolver: zodResolver(weatherFormSchema),
@@ -115,10 +113,7 @@ export default function WeatherForm({ historicalDataText, presetForecasts }: Wea
         description: state.error,
       });
     }
-    if (state.data) {
-      setDisplayedForecast(state.data);
-    }
-  }, [state, toast]);
+  }, [state.error, toast]);
 
 
   const loadNextPreset = () => {
@@ -126,43 +121,10 @@ export default function WeatherForm({ historicalDataText, presetForecasts }: Wea
     const newPreset = presets[nextIndex];
     form.reset(newPreset);
     setPresetIndex(nextIndex);
-    const matchingForecast = presetForecasts.find(pf => pf.name === newPreset.city);
-    setDisplayedForecast(matchingForecast?.forecast ?? null);
   };
 
   const selectedCountry = form.watch('country');
   const selectedState = form.watch('state');
-  const selectedCity = form.watch('city');
-
-  useEffect(() => {
-    // When the form is reset to a preset, show its forecast
-    const presetCity = presets[presetIndex].city;
-    if (selectedCity === presetCity) {
-      const matchingForecast = presetForecasts.find(pf => pf.name === presetCity);
-      setDisplayedForecast(matchingForecast?.forecast ?? null);
-    }
-  }, [presetIndex, selectedCity, presetForecasts]);
-
-  useEffect(() => {
-    // When a preset city is selected from the dropdown, show its forecast
-    const matchingPreset = presets.find(p => p.city === selectedCity);
-    if(matchingPreset) {
-      const presetData = presetForecasts.find(pf => pf.name === selectedCity);
-      if(presetData) {
-        setDisplayedForecast(presetData.forecast);
-      }
-      // find index of matchingPreset in presets
-      const index = presets.indexOf(matchingPreset);
-      setPresetIndex(index);
-      form.reset(matchingPreset);
-    } else {
-      // If not a preset city, clear the displayed forecast unless it's a new generation
-      if (state.data?.summary !== displayedForecast?.summary) {
-         setDisplayedForecast(null);
-      }
-    }
-  }, [selectedCity, presetForecasts, form, state.data, displayedForecast]);
-
 
   return (
     <Card className="shadow-lg">
@@ -238,7 +200,17 @@ export default function WeatherForm({ historicalDataText, presetForecasts }: Wea
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel className="flex items-center gap-2"><Building className="h-4 w-4 text-primary" />City/Town</FormLabel>
-                    <Select onValueChange={field.onChange} value={field.value} disabled={!selectedState}>
+                    <Select 
+                      onValueChange={(value) => {
+                        field.onChange(value);
+                        const matchingPreset = presets.find(p => p.city === value);
+                        if (matchingPreset) {
+                          form.reset(matchingPreset);
+                        }
+                      }} 
+                      value={field.value} 
+                      disabled={!selectedState}
+                    >
                       <FormControl>
                         <SelectTrigger><SelectValue placeholder="Select a city/town" /></SelectTrigger>
                       </FormControl>
@@ -304,7 +276,7 @@ export default function WeatherForm({ historicalDataText, presetForecasts }: Wea
             <SubmitButton />
           </form>
         </FormProvider>
-        {displayedForecast && <WeatherDisplay forecast={displayedForecast} />}
+        {state.data && <WeatherDisplay forecast={state.data} />}
       </CardContent>
     </Card>
   );
