@@ -1,21 +1,11 @@
 import { CloudSun } from 'lucide-react';
-import { summarizeHistoricalWeatherData } from '@/ai/flows/summarize-historical-weather-data';
 import WeatherForm from '@/components/weather-form';
-import HistoricalWeather from '@/components/historical-weather';
 import { GenerateWeatherForecastOutput } from '@/ai/flows/generate-weather-forecast';
 import { presets } from '@/lib/presets';
 
 export type PresetForecast = { name: string, forecast: GenerateWeatherForecastOutput | null };
 
 export default async function Home() {
-  const currentDate = new Date().toLocaleDateString('en-US', {
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric',
-  });
-  const defaultLocation = 'Mumbai, MH';
-  
-  let historicalSummary = { summary: 'Historical weather data is currently unavailable. Please check your Gemini API key.' };
   
   // Hard-coded forecasts to ensure they always display
   const presetForecasts: PresetForecast[] = [
@@ -66,20 +56,6 @@ export default async function Home() {
     }
   ];
 
-  if (process.env.GEMINI_API_KEY) {
-    try {
-      historicalSummary = await summarizeHistoricalWeatherData({
-        date: currentDate,
-        location: defaultLocation,
-        historicalData: presets[0].historicalData,
-      });
-    } catch (error) {
-      console.error('Error fetching historical data:', error);
-      historicalSummary = { summary: 'Could not fetch historical weather data. The AI service may be down.' };
-    }
-  }
-
-
   return (
     <div className="min-h-screen bg-background font-body text-foreground">
       <header className="flex items-center justify-center gap-4 p-6 border-b bg-card">
@@ -91,19 +67,7 @@ export default async function Home() {
       </header>
 
       <main className="p-4 md:p-8">
-        <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
-          <div className="lg:col-span-2">
-            <WeatherForm historicalDataText={presets[0].historicalData} presetForecasts={presetForecasts} />
-          </div>
-
-          <div className="space-y-8">
-            <HistoricalWeather
-              summary={historicalSummary.summary}
-              date={currentDate}
-              location={defaultLocation}
-            />
-          </div>
-        </div>
+        <WeatherForm presetForecasts={presetForecasts} />
       </main>
     </div>
   );

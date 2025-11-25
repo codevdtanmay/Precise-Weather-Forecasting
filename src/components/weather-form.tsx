@@ -1,7 +1,7 @@
 'use client';
 
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useForm, FormProvider, useFormContext } from 'react-hook-form';
+import { useForm, FormProvider } from 'react-hook-form';
 import {
   Form,
   FormControl,
@@ -29,8 +29,6 @@ import {
   RadioTower,
   History,
   Cloud,
-  Loader2,
-  Bot,
   Globe,
   MapPin,
   Building,
@@ -43,8 +41,9 @@ import WeatherDisplay from './weather-display';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
 import { countries, states, cities } from '@/lib/locations';
 import { presets } from '@/lib/presets';
-import { GenerateWeatherForecastOutput } from '@/ai/flows/generate-weather-forecast';
 import { PresetForecast } from '@/app/page';
+import HistoricalWeather from './historical-weather';
+
 
 const formFields = [
   { name: 'humidity', label: 'Humidity (%)', icon: Droplets, placeholder: 'e.g., 75' },
@@ -67,12 +66,11 @@ const textAreaFields = [
 ];
 
 interface WeatherFormProps {
-  historicalDataText: string;
   presetForecasts: PresetForecast[];
 }
 
 
-export default function WeatherForm({ historicalDataText, presetForecasts }: WeatherFormProps) {
+export default function WeatherForm({ presetForecasts }: WeatherFormProps) {
   const { toast } = useToast();
   const [state, formAction] = useActionState(getForecastAction, {
     data: null,
@@ -85,6 +83,16 @@ export default function WeatherForm({ historicalDataText, presetForecasts }: Wea
     resolver: zodResolver(weatherFormSchema),
     defaultValues: presets[0],
   });
+
+  const [currentDate, setCurrentDate] = useState('');
+
+  useEffect(() => {
+    setCurrentDate(new Date().toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+    }));
+  }, []);
 
   useEffect(() => {
     if (state.error) {
@@ -110,157 +118,172 @@ export default function WeatherForm({ historicalDataText, presetForecasts }: Wea
   const currentCity = form.watch('city');
   const displayForecast = state.data || presetForecasts.find(p => p.name === currentCity)?.forecast || null;
 
+  const currentPreset = presets.find(p => p.city === currentCity);
+  const historicalSummary = currentPreset ? currentPreset.historicalData : 'Select a preset city to see historical data.';
+  const location = currentPreset ? `${currentPreset.city}, ${currentPreset.state}` : '';
+
 
   return (
-    <Card className="shadow-lg">
-      <CardHeader>
-        <div className="flex items-center justify-between">
-          <div>
-            <CardTitle className="font-headline text-2xl">Atmospheric Data Input</CardTitle>
-            <CardDescription>Enter the location and current weather metrics to generate a forecast.</CardDescription>
-          </div>
-          <Button variant="outline" onClick={loadNextPreset}>
-            <Wand className="mr-2 h-4 w-4" />
-            Recorded Data
-          </Button>
+    <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+      <div className="lg:col-span-2">
+        <Card className="shadow-lg">
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <div>
+                <CardTitle className="font-headline text-2xl">Atmospheric Data Input</CardTitle>
+                <CardDescription>Enter the location and current weather metrics to generate a forecast.</CardDescription>
+              </div>
+              <Button variant="outline" onClick={loadNextPreset}>
+                <Wand className="mr-2 h-4 w-4" />
+                Recorded Data
+              </Button>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <FormProvider {...form}>
+              <form
+                action={formAction}
+                className="space-y-8"
+              >
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                  <FormField
+                    control={form.control}
+                    name="country"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="flex items-center gap-2"><Globe className="h-4 w-4 text-primary" />Country</FormLabel>
+                        <Select onValueChange={(value) => {
+                          field.onChange(value);
+                          form.setValue('state', '');
+                          form.setValue('city', '');
+                        }} value={field.value}>
+                          <FormControl>
+                            <SelectTrigger><SelectValue placeholder="Select a country" /></SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            {countries.map(country => (
+                              <SelectItem key={country.code} value={country.code}>{country.name}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="state"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="flex items-center gap-2"><MapPin className="h-4 w-4 text-primary" />State/Province</FormLabel>
+                        <Select onValueChange={(value) => {
+                          field.onChange(value);
+                          form.setValue('city', '');
+                        }} value={field.value} disabled={!selectedCountry}>
+                          <FormControl>
+                            <SelectTrigger><SelectValue placeholder="Select a state/province" /></SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            {states[selectedCountry]?.map(state => (
+                              <SelectItem key={state.code} value={state.code}>{state.name}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="city"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="flex items-center gap-2"><Building className="h-4 w-4 text-primary" />City/Town</FormLabel>
+                        <Select 
+                          onValueChange={(value) => {
+                            field.onChange(value);
+                            const matchingPreset = presets.find(p => p.city === value);
+                            if (matchingPreset) {
+                              form.reset(matchingPreset);
+                            }
+                          }} 
+                          value={field.value} 
+                          disabled={!selectedState}
+                        >
+                          <FormControl>
+                            <SelectTrigger><SelectValue placeholder="Select a city/town" /></SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            {cities[selectedState]?.map(city => (
+                              <SelectItem key={city.name} value={city.name}>{city.name}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
+                  {formFields.map(({ name, label, icon: Icon, placeholder }) => (
+                    <FormField
+                      key={name}
+                      control={form.control}
+                      name={name as keyof WeatherFormData}
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel className="flex items-center gap-2">
+                            <Icon className="h-4 w-4 text-primary" />
+                            {label}
+                          </FormLabel>
+                          <FormControl>
+                            <Input placeholder={placeholder} {...field} type={typeof field.value === 'number' ? 'number' : 'text'} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  ))}
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-8">
+                  {textAreaFields.map(({ name, label, icon: Icon, placeholder }) => (
+                    <FormField
+                      key={name}
+                      control={form.control}
+                      name={name as keyof WeatherFormData}
+                      render={({ field }) => (
+                        <FormItem>
+                           <FormLabel className="flex items-center gap-2">
+                            <Icon className="h-4 w-4 text-primary" />
+                            {label}
+                          </FormLabel>
+                          <FormControl>
+                            <Textarea
+                              placeholder={placeholder}
+                              className="resize-none"
+                              readOnly={name === 'historicalData'}
+                              {...field}
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  ))}
+                </div>
+              </form>
+            </FormProvider>
+            {displayForecast && <WeatherDisplay forecast={displayForecast} />}
+          </CardContent>
+        </Card>
+      </div>
+       <div className="space-y-8">
+            <HistoricalWeather
+              summary={historicalSummary}
+              date={currentDate}
+              location={location}
+            />
         </div>
-      </CardHeader>
-      <CardContent>
-        <FormProvider {...form}>
-          <form
-            action={formAction}
-            className="space-y-8"
-          >
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <FormField
-                control={form.control}
-                name="country"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel className="flex items-center gap-2"><Globe className="h-4 w-4 text-primary" />Country</FormLabel>
-                    <Select onValueChange={(value) => {
-                      field.onChange(value);
-                      form.setValue('state', '');
-                      form.setValue('city', '');
-                    }} value={field.value}>
-                      <FormControl>
-                        <SelectTrigger><SelectValue placeholder="Select a country" /></SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        {countries.map(country => (
-                          <SelectItem key={country.code} value={country.code}>{country.name}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="state"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel className="flex items-center gap-2"><MapPin className="h-4 w-4 text-primary" />State/Province</FormLabel>
-                    <Select onValueChange={(value) => {
-                      field.onChange(value);
-                      form.setValue('city', '');
-                    }} value={field.value} disabled={!selectedCountry}>
-                      <FormControl>
-                        <SelectTrigger><SelectValue placeholder="Select a state/province" /></SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        {states[selectedCountry]?.map(state => (
-                          <SelectItem key={state.code} value={state.code}>{state.name}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="city"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel className="flex items-center gap-2"><Building className="h-4 w-4 text-primary" />City/Town</FormLabel>
-                    <Select 
-                      onValueChange={(value) => {
-                        field.onChange(value);
-                        const matchingPreset = presets.find(p => p.city === value);
-                        if (matchingPreset) {
-                          form.reset(matchingPreset);
-                        }
-                      }} 
-                      value={field.value} 
-                      disabled={!selectedState}
-                    >
-                      <FormControl>
-                        <SelectTrigger><SelectValue placeholder="Select a city/town" /></SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        {cities[selectedState]?.map(city => (
-                          <SelectItem key={city.name} value={city.name}>{city.name}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
-              {formFields.map(({ name, label, icon: Icon, placeholder }) => (
-                <FormField
-                  key={name}
-                  control={form.control}
-                  name={name as keyof WeatherFormData}
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className="flex items-center gap-2">
-                        <Icon className="h-4 w-4 text-primary" />
-                        {label}
-                      </FormLabel>
-                      <FormControl>
-                        <Input placeholder={placeholder} {...field} type={typeof field.value === 'number' ? 'number' : 'text'} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              ))}
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-8">
-              {textAreaFields.map(({ name, label, icon: Icon, placeholder }) => (
-                <FormField
-                  key={name}
-                  control={form.control}
-                  name={name as keyof WeatherFormData}
-                  render={({ field }) => (
-                    <FormItem>
-                       <FormLabel className="flex items-center gap-2">
-                        <Icon className="h-4 w-4 text-primary" />
-                        {label}
-                      </FormLabel>
-                      <FormControl>
-                        <Textarea
-                          placeholder={placeholder}
-                          className="resize-none"
-                          readOnly={name === 'historicalData'}
-                          {...field}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              ))}
-            </div>
-          </form>
-        </FormProvider>
-        {displayForecast && <WeatherDisplay forecast={displayForecast} />}
-      </CardContent>
-    </Card>
+    </div>
   );
 }
