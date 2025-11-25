@@ -76,7 +76,7 @@ export default async function Home() {
             />
             <Card className="shadow-lg">
               <CardHeader>
-                <CardTitle className="font-headline text-2xl">Preset Forecasts</CardTitle>
+                <CardTitle className="font-headline text-2xl">Forecasts</CardTitle>
                 <CardDescription>
                   Here are some AI-generated forecasts for different locations.
                 </CardDescription>
@@ -88,7 +88,7 @@ export default async function Home() {
                     {forecast ? (
                        <WeatherDisplay forecast={forecast} />
                     ) : (
-                      <p className="text-sm text-destructive">Could not load preset forecast.</p>
+                      <p className="text-sm text-destructive">Could not load forecast.</p>
                     )}
                   </div>
                 ))}
