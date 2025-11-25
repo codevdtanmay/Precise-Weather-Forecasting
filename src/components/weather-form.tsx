@@ -1,7 +1,7 @@
 'use client';
 
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useForm, useFormContext } from 'react-hook-form';
+import { useForm, FormProvider } from 'react-hook-form';
 import {
   Form,
   FormControl,
@@ -9,6 +9,7 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
+  useFormContext,
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -43,6 +44,8 @@ import WeatherDisplay from './weather-display';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
 import { countries, states, cities } from '@/lib/locations';
 import { presets } from '@/lib/presets';
+import { GenerateWeatherForecastOutput } from '@/ai/flows/generate-weather-forecast';
+import { PresetForecast } from '@/app/page';
 
 const formFields = [
   { name: 'humidity', label: 'Humidity (%)', icon: Droplets, placeholder: 'e.g., 75' },
@@ -65,26 +68,10 @@ const textAreaFields = [
 ];
 
 function SubmitButton() {
-  const form = useFormContext();
-  const [pending, setPending] = useState(false);
-
-  if (!form) {
-    return (
-       <Button type="submit" disabled className="w-full">
-          <Bot className="mr-2 h-4 w-4" />
-          Generate Forecast
-        </Button>
-    )
-  }
-  
-  useEffect(() => {
-    setPending(form.formState.isSubmitting);
-  }, [form.formState.isSubmitting]);
-
-
+  const { formState: { isSubmitting } } = useFormContext<WeatherFormData>();
   return (
-    <Button type="submit" disabled={pending} className="w-full">
-      {pending ? (
+    <Button type="submit" disabled={isSubmitting} className="w-full">
+      {isSubmitting ? (
         <>
           <Loader2 className="mr-2 h-4 w-4 animate-spin" />
           Generating Forecast...
@@ -99,7 +86,13 @@ function SubmitButton() {
   );
 }
 
-export default function WeatherForm({ historicalDataText }: { historicalDataText: string }) {
+interface WeatherFormProps {
+  historicalDataText: string;
+  presetForecasts: PresetForecast[];
+}
+
+
+export default function WeatherForm({ historicalDataText, presetForecasts }: WeatherFormProps) {
   const { toast } = useToast();
   const [state, formAction] = useActionState(getForecastAction, {
     data: null,
@@ -107,6 +100,7 @@ export default function WeatherForm({ historicalDataText }: { historicalDataText
   });
   
   const [presetIndex, setPresetIndex] = useState(0);
+  const [displayedForecast, setDisplayedForecast] = useState<GenerateWeatherForecastOutput | null>(null);
 
   const form = useForm<WeatherFormData>({
     resolver: zodResolver(weatherFormSchema),
@@ -121,17 +115,53 @@ export default function WeatherForm({ historicalDataText }: { historicalDataText
         description: state.error,
       });
     }
-  }, [state.error, toast]);
+    if (state.data) {
+      setDisplayedForecast(state.data);
+    }
+  }, [state, toast]);
 
 
   const loadNextPreset = () => {
     const nextIndex = (presetIndex + 1) % presets.length;
-    form.reset(presets[nextIndex]);
+    const newPreset = presets[nextIndex];
+    form.reset(newPreset);
     setPresetIndex(nextIndex);
+    const matchingForecast = presetForecasts.find(pf => pf.name === newPreset.city);
+    setDisplayedForecast(matchingForecast?.forecast ?? null);
   };
 
   const selectedCountry = form.watch('country');
   const selectedState = form.watch('state');
+  const selectedCity = form.watch('city');
+
+  useEffect(() => {
+    // When the form is reset to a preset, show its forecast
+    const presetCity = presets[presetIndex].city;
+    if (selectedCity === presetCity) {
+      const matchingForecast = presetForecasts.find(pf => pf.name === presetCity);
+      setDisplayedForecast(matchingForecast?.forecast ?? null);
+    }
+  }, [presetIndex, selectedCity, presetForecasts]);
+
+  useEffect(() => {
+    // When a preset city is selected from the dropdown, show its forecast
+    const matchingPreset = presets.find(p => p.city === selectedCity);
+    if(matchingPreset) {
+      const presetData = presetForecasts.find(pf => pf.name === selectedCity);
+      if(presetData) {
+        setDisplayedForecast(presetData.forecast);
+      }
+      // find index of matchingPreset in presets
+      const index = presets.indexOf(matchingPreset);
+      setPresetIndex(index);
+      form.reset(matchingPreset);
+    } else {
+      // If not a preset city, clear the displayed forecast unless it's a new generation
+      if (state.data?.summary !== displayedForecast?.summary) {
+         setDisplayedForecast(null);
+      }
+    }
+  }, [selectedCity, presetForecasts, form, state.data, displayedForecast]);
 
 
   return (
@@ -149,7 +179,7 @@ export default function WeatherForm({ historicalDataText }: { historicalDataText
         </div>
       </CardHeader>
       <CardContent>
-        <Form {...form}>
+        <FormProvider {...form}>
           <form
             action={formAction}
             className="space-y-8"
@@ -273,8 +303,8 @@ export default function WeatherForm({ historicalDataText }: { historicalDataText
 
             <SubmitButton />
           </form>
-        </Form>
-        {state.data && <WeatherDisplay forecast={state.data} />}
+        </FormProvider>
+        {displayedForecast && <WeatherDisplay forecast={displayedForecast} />}
       </CardContent>
     </Card>
   );

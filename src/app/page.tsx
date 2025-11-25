@@ -4,9 +4,8 @@ import WeatherForm from '@/components/weather-form';
 import HistoricalWeather from '@/components/historical-weather';
 import { generateWeatherForecast, GenerateWeatherForecastOutput } from '@/ai/flows/generate-weather-forecast';
 import { presets } from '@/lib/presets';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import WeatherDisplay from '@/components/weather-display';
 
+export type PresetForecast = { name: string, forecast: GenerateWeatherForecastOutput | null };
 
 export default async function Home() {
   const currentDate = new Date().toLocaleDateString('en-US', {
@@ -18,7 +17,7 @@ export default async function Home() {
   const historicalDataText = `On this day in the past, Mumbai experienced warm and humid conditions with temperatures around 88°F (31°C). Skies were partly cloudy with a chance of afternoon showers. Winds were moderate from the southwest.`;
 
   let historicalSummary = { summary: 'Historical weather data is currently unavailable. Please check your Gemini API key.' };
-  let presetForecasts: { name: string, forecast: GenerateWeatherForecastOutput | null }[] = [];
+  let presetForecasts: PresetForecast[] = [];
 
   if (process.env.GEMINI_API_KEY) {
     try {
@@ -65,7 +64,7 @@ export default async function Home() {
       <main className="p-4 md:p-8">
         <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
           <div className="lg:col-span-2">
-            <WeatherForm historicalDataText={historicalDataText} />
+            <WeatherForm historicalDataText={historicalDataText} presetForecasts={presetForecasts} />
           </div>
 
           <div className="space-y-8">
@@ -74,23 +73,6 @@ export default async function Home() {
               date={currentDate}
               location={defaultLocation}
             />
-            <Card className="shadow-lg">
-              <CardHeader>
-                <CardTitle className="font-headline text-2xl">Forecasts</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                {presetForecasts.map(({ name, forecast }) => (
-                  <div key={name}>
-                    <h3 className="font-bold text-lg">Forecast for {name}</h3>
-                    {forecast ? (
-                       <WeatherDisplay forecast={forecast} />
-                    ) : (
-                      <p className="text-sm text-destructive">Could not load forecast.</p>
-                    )}
-                  </div>
-                ))}
-              </CardContent>
-            </Card>
           </div>
         </div>
       </main>
