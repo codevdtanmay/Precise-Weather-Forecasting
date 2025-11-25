@@ -18,7 +18,7 @@ export default async function Home() {
   const historicalDataText = `On this day in the past, Mumbai experienced warm and humid conditions with temperatures around 88°F (31°C). Skies were partly cloudy with a chance of afternoon showers. Winds were moderate from the southwest.`;
 
   let historicalSummary = { summary: 'Historical weather data is currently unavailable. Please check your Gemini API key.' };
-  let exampleForecasts: { name: string, forecast: GenerateWeatherForecastOutput | null }[] = [];
+  let presetForecasts: { name: string, forecast: GenerateWeatherForecastOutput | null }[] = [];
 
   if (process.env.GEMINI_API_KEY) {
     try {
@@ -34,7 +34,7 @@ export default async function Home() {
       ]);
 
       historicalSummary = summaryResult;
-      exampleForecasts = [
+      presetForecasts = [
         { name: 'Mumbai', forecast: forecastResults[0] },
         { name: 'New Delhi', forecast: forecastResults[1] },
         { name: 'Bengaluru', forecast: forecastResults[2] },
@@ -43,7 +43,7 @@ export default async function Home() {
     } catch (error) {
       console.error('Error fetching initial data:', error);
       historicalSummary = { summary: 'Could not fetch historical weather data. The AI service may be down.' };
-      exampleForecasts = [
+      presetForecasts = [
         { name: 'Mumbai', forecast: null },
         { name: 'New Delhi', forecast: null },
         { name: 'Bengaluru', forecast: null },
@@ -76,19 +76,19 @@ export default async function Home() {
             />
             <Card className="shadow-lg">
               <CardHeader>
-                <CardTitle className="font-headline text-2xl">Example Forecasts</CardTitle>
+                <CardTitle className="font-headline text-2xl">Preset Forecasts</CardTitle>
                 <CardDescription>
-                  Here are some examples of AI-generated forecasts.
+                  Here are some AI-generated forecasts for different locations.
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
-                {exampleForecasts.map(({ name, forecast }) => (
+                {presetForecasts.map(({ name, forecast }) => (
                   <div key={name}>
-                    <h3 className="font-bold text-lg">Example Forecast for {name}</h3>
+                    <h3 className="font-bold text-lg">Forecast for {name}</h3>
                     {forecast ? (
                        <WeatherDisplay forecast={forecast} />
                     ) : (
-                      <p className="text-sm text-destructive">Could not load example forecast.</p>
+                      <p className="text-sm text-destructive">Could not load preset forecast.</p>
                     )}
                   </div>
                 ))}
