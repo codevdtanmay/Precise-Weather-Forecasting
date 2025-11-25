@@ -37,7 +37,7 @@ import {
   Building,
   Wand,
 } from 'lucide-react';
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import { useActionState } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { Textarea } from './ui/textarea';
@@ -192,7 +192,7 @@ export default function WeatherForm({ historicalDataText }: { historicalDataText
           </div>
           <Button variant="outline" onClick={loadNextPreset}>
             <Wand className="mr-2 h-4 w-4" />
-            Load Example
+            Recorded Data
           </Button>
         </div>
       </CardHeader>
