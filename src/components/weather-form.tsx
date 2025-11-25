@@ -1,7 +1,7 @@
 'use client';
 
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useFormState, useFormStatus } from 'react-dom';
+import { useFormStatus } from 'react-dom';
 import { useForm } from 'react-hook-form';
 import {
   Form,
@@ -33,7 +33,7 @@ import {
   Loader2,
   Bot,
 } from 'lucide-react';
-import React, { useEffect } from 'react';
+import React, { useEffect, useActionState } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { Textarea } from './ui/textarea';
 import WeatherDisplay from './weather-display';
@@ -79,7 +79,7 @@ function SubmitButton() {
 
 export default function WeatherForm({ historicalDataText }: { historicalDataText: string }) {
   const { toast } = useToast();
-  const [state, formAction] = useFormState(getForecastAction, {
+  const [state, formAction] = useActionState(getForecastAction, {
     data: null,
     error: null,
   });
