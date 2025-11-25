@@ -77,9 +77,6 @@ export default async function Home() {
             <Card className="shadow-lg">
               <CardHeader>
                 <CardTitle className="font-headline text-2xl">Forecasts</CardTitle>
-                <CardDescription>
-                  Here are some AI-generated forecasts for different locations.
-                </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                 {presetForecasts.map(({ name, forecast }) => (
