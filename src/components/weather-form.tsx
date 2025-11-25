@@ -170,17 +170,28 @@ export default function WeatherForm({ historicalDataText }: { historicalDataText
   // Use a ref to track if the toast has been shown for the current error
   const errorToastIdRef = React.useRef<string | number | undefined>(undefined);
   if (state.error) {
+    // Only show toast if the error message is different from the last one
     if (errorToastIdRef.current !== state.error) {
-      toast({
+       toast({
         variant: 'destructive',
         title: 'An error occurred',
         description: state.error,
       });
+      // Store the current error message in the ref
       errorToastIdRef.current = state.error;
     }
   } else {
+    // Reset the ref if there is no error
     errorToastIdRef.current = undefined;
   }
+
+  const handleFormSubmit = (data: WeatherFormData) => {
+    const formData = new FormData();
+    for (const key in data) {
+      formData.append(key, (data as any)[key]);
+    }
+    formAction(formData);
+  };
 
   return (
     <Card className="shadow-lg">
@@ -198,7 +209,7 @@ export default function WeatherForm({ historicalDataText }: { historicalDataText
       </CardHeader>
       <CardContent>
         <Form {...form}>
-          <form action={formAction} className="space-y-8">
+          <form onSubmit={form.handleSubmit(handleFormSubmit)} className="space-y-8">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               <FormField
                 control={form.control}
@@ -206,7 +217,11 @@ export default function WeatherForm({ historicalDataText }: { historicalDataText
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel className="flex items-center gap-2"><Globe className="h-4 w-4 text-primary" />Country</FormLabel>
-                    <Select onValueChange={field.onChange} value={field.value}>
+                    <Select onValueChange={(value) => {
+                      field.onChange(value);
+                      form.setValue('state', '');
+                      form.setValue('city', '');
+                    }} value={field.value}>
                       <FormControl>
                         <SelectTrigger><SelectValue placeholder="Select a country" /></SelectTrigger>
                       </FormControl>
@@ -226,7 +241,10 @@ export default function WeatherForm({ historicalDataText }: { historicalDataText
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel className="flex items-center gap-2"><MapPin className="h-4 w-4 text-primary" />State/Province</FormLabel>
-                    <Select onValueChange={field.onChange} value={field.value} disabled={!selectedCountry}>
+                    <Select onValueChange={(value) => {
+                      field.onChange(value);
+                      form.setValue('city', '');
+                    }} value={field.value} disabled={!selectedCountry}>
                       <FormControl>
                         <SelectTrigger><SelectValue placeholder="Select a state/province" /></SelectTrigger>
                       </FormControl>
