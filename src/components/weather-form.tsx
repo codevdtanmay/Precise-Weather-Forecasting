@@ -32,11 +32,16 @@ import {
   Cloud,
   Loader2,
   Bot,
+  Globe,
+  MapPin,
+  Building,
 } from 'lucide-react';
-import React, { useEffect, useActionState } from 'react';
+import React, { useEffect, useActionState, useState } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { Textarea } from './ui/textarea';
 import WeatherDisplay from './weather-display';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
+import { countries, states, cities } from '@/lib/locations';
 
 const formFields = [
   { name: 'humidity', label: 'Humidity (%)', icon: Droplets, placeholder: 'e.g., 60' },
@@ -87,6 +92,9 @@ export default function WeatherForm({ historicalDataText }: { historicalDataText
   const form = useForm<WeatherFormData>({
     resolver: zodResolver(weatherFormSchema),
     defaultValues: {
+      country: 'US',
+      state: 'CA',
+      city: 'San Francisco',
       humidity: 85,
       windSpeed: 7,
       airPressure: 1010,
@@ -104,6 +112,9 @@ export default function WeatherForm({ historicalDataText }: { historicalDataText
     },
   });
 
+  const selectedCountry = form.watch('country');
+  const selectedState = form.watch('state');
+
   useEffect(() => {
     if (state.error) {
       toast({
@@ -118,11 +129,73 @@ export default function WeatherForm({ historicalDataText }: { historicalDataText
     <Card className="shadow-lg">
       <CardHeader>
         <CardTitle className="font-headline text-2xl">Atmospheric Data Input</CardTitle>
-        <CardDescription>Enter the current weather metrics to generate a forecast.</CardDescription>
+        <CardDescription>Enter the location and current weather metrics to generate a forecast.</CardDescription>
       </CardHeader>
       <CardContent>
         <Form {...form}>
           <form action={formAction} className="space-y-8">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <FormField
+                control={form.control}
+                name="country"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="flex items-center gap-2"><Globe className="h-4 w-4 text-primary" />Country</FormLabel>
+                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                      <FormControl>
+                        <SelectTrigger><SelectValue placeholder="Select a country" /></SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {countries.map(country => (
+                          <SelectItem key={country.code} value={country.code}>{country.name}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="state"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="flex items-center gap-2"><MapPin className="h-4 w-4 text-primary" />State/Province</FormLabel>
+                    <Select onValueChange={field.onChange} value={field.value} disabled={!selectedCountry}>
+                      <FormControl>
+                        <SelectTrigger><SelectValue placeholder="Select a state/province" /></SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {states[selectedCountry]?.map(state => (
+                          <SelectItem key={state.code} value={state.code}>{state.name}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="city"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="flex items-center gap-2"><Building className="h-4 w-4 text-primary" />City/Town</FormLabel>
+                    <Select onValueChange={field.onChange} value={field.value} disabled={!selectedState}>
+                      <FormControl>
+                        <SelectTrigger><SelectValue placeholder="Select a city/town" /></SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {cities[selectedState]?.map(city => (
+                          <SelectItem key={city.name} value={city.name}>{city.name}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
               {formFields.map(({ name, label, icon: Icon, placeholder }) => (
                 <FormField

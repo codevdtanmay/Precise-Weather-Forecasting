@@ -1,8 +1,7 @@
-import { CloudSun, History } from 'lucide-react';
+import { CloudSun } from 'lucide-react';
 import { summarizeHistoricalWeatherData } from '@/ai/flows/summarize-historical-weather-data';
 import WeatherForm from '@/components/weather-form';
 import HistoricalWeather from '@/components/historical-weather';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
 export default async function Home() {
   const currentDate = new Date().toLocaleDateString('en-US', {
@@ -10,7 +9,7 @@ export default async function Home() {
     month: 'long',
     day: 'numeric',
   });
-  const location = 'San Francisco, CA';
+  const defaultLocation = 'San Francisco, CA';
   const historicalDataText = `On this day in the past, San Francisco experienced mild temperatures around 60°F with intermittent fog clearing by the afternoon. Winds were light from the west. No significant precipitation was recorded.`;
 
   let historicalSummary = { summary: 'Historical weather data is currently unavailable. Please check your Gemini API key.' };
@@ -19,7 +18,7 @@ export default async function Home() {
     try {
       historicalSummary = await summarizeHistoricalWeatherData({
         date: currentDate,
-        location,
+        location: defaultLocation,
         historicalData: historicalDataText,
       });
     } catch (error) {
@@ -49,7 +48,7 @@ export default async function Home() {
             <HistoricalWeather
               summary={historicalSummary.summary}
               date={currentDate}
-              location={location}
+              location={defaultLocation}
             />
           </div>
         </div>

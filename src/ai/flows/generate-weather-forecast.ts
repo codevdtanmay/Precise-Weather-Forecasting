@@ -12,6 +12,9 @@ import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
 
 const GenerateWeatherForecastInputSchema = z.object({
+  city: z.string().describe('The city for the weather forecast.'),
+  state: z.string().describe('The state or province for the weather forecast.'),
+  country: z.string().describe('The country for the weather forecast.'),
   humidity: z.number().describe('Humidity percentage (0-100).'),
   windSpeed: z.number().describe('Wind speed in mph.'),
   airPressure: z.number().describe('Air pressure in hPa.'),
@@ -42,7 +45,7 @@ const prompt = ai.definePrompt({
   name: 'generateWeatherForecastPrompt',
   input: {schema: GenerateWeatherForecastInputSchema},
   output: {schema: GenerateWeatherForecastOutputSchema},
-  prompt: `You are an expert meteorologist. Based on the provided atmospheric data, generate a detailed weather forecast for the next 7 days.
+  prompt: `You are an expert meteorologist. Based on the provided atmospheric data, generate a detailed weather forecast for the next 7 days for {{{city}}}, {{{state}}}, {{{country}}}.
 
 Atmospheric Data:
 Humidity: {{{humidity}}}%
