@@ -1,8 +1,7 @@
 'use client';
 
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useFormStatus } from 'react-dom';
-import { useForm } from 'react-hook-form';
+import { useForm, useFormContext } from 'react-hook-form';
 import {
   Form,
   FormControl,
@@ -43,6 +42,7 @@ import { Textarea } from './ui/textarea';
 import WeatherDisplay from './weather-display';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
 import { countries, states, cities } from '@/lib/locations';
+import { presets } from '@/lib/presets';
 
 const formFields = [
   { name: 'humidity', label: 'Humidity (%)', icon: Droplets, placeholder: 'e.g., 75' },
@@ -64,68 +64,25 @@ const textAreaFields = [
   { name: 'cloudSourceData', label: 'Cloud Source Data', icon: Cloud, placeholder: 'Describe cloud source data...' },
 ];
 
-const presets: WeatherFormData[] = [
-  { // Default/Rainy Mumbai
-    country: 'IN',
-    state: 'MH',
-    city: 'Mumbai',
-    humidity: 85,
-    windSpeed: 20,
-    airPressure: 1002,
-    rainfallAmount: 15,
-    uvIndex: 3,
-    soilMoisture: 75,
-    soilTemperature: 26,
-    fogDensity: 10,
-    airQuality: 'Good',
-    visibility: 5,
-    satelliteImages: 'Widespread dense cloud cover observed over the coastal areas.',
-    radarData: 'Continuous moderate to heavy rainfall detected across the city.',
-    historicalData: 'On this day in the past, Mumbai experienced warm and humid conditions with temperatures around 88°F (31°C). Skies were partly cloudy with a chance of afternoon showers. Winds were moderate from the southwest.',
-    cloudSourceData: 'Strong monsoon currents from the Arabian Sea are feeding moisture.',
-  },
-  { // Sunny Delhi
-    country: 'IN',
-    state: 'DL',
-    city: 'New Delhi',
-    humidity: 30,
-    windSpeed: 8,
-    airPressure: 1015,
-    rainfallAmount: 0,
-    uvIndex: 9,
-    soilMoisture: 25,
-    soilTemperature: 38,
-    fogDensity: 0,
-    airQuality: 'Unhealthy for Sensitive Groups',
-    visibility: 10,
-    satelliteImages: 'Clear skies visible across the entire northern plains.',
-    radarData: 'No precipitation detected in the vicinity.',
-    historicalData: 'Historically, this time of year in Delhi is characterized by dry heat and clear skies.',
-    cloudSourceData: 'Very dry continental air mass with no significant moisture source.',
-  },
-  { // Foggy Bengaluru
-    country: 'IN',
-    state: 'KA',
-    city: 'Bengaluru',
-    humidity: 95,
-    windSpeed: 5,
-    airPressure: 1010,
-    rainfallAmount: 1,
-    uvIndex: 2,
-    soilMoisture: 65,
-    soilTemperature: 21,
-    fogDensity: 80,
-    airQuality: 'Moderate',
-    visibility: 1,
-    satelliteImages: 'Low-level stratus clouds and fog covering the Deccan plateau.',
-    radarData: 'Occasional light drizzle detected, but no significant rain bands.',
-    historicalData: 'Mornings in Bengaluru during this season often feature dense fog, clearing by noon.',
-    cloudSourceData: 'Local moisture condensation due to temperature inversion.',
-  }
-];
-
 function SubmitButton() {
-  const { pending } = useFormStatus();
+  const [pending, setPending] = useState(false);
+  const form = useFormContext();
+
+  if (!form) {
+    return (
+       <Button type="submit" disabled className="w-full">
+          <Bot className="mr-2 h-4 w-4" />
+          Generate Forecast
+        </Button>
+    )
+  }
+
+  useEffect(() => {
+    const subscription = form.formState.isSubmitting;
+    setPending(subscription);
+  }, [form.formState.isSubmitting]);
+
+
   return (
     <Button type="submit" disabled={pending} className="w-full">
       {pending ? (
@@ -193,7 +150,10 @@ export default function WeatherForm({ historicalDataText }: { historicalDataText
       </CardHeader>
       <CardContent>
         <Form {...form}>
-          <form action={formAction} className="space-y-8">
+          <form
+            action={formAction}
+            className="space-y-8"
+          >
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               <FormField
                 control={form.control}

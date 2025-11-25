@@ -2,6 +2,10 @@ import { CloudSun } from 'lucide-react';
 import { summarizeHistoricalWeatherData } from '@/ai/flows/summarize-historical-weather-data';
 import WeatherForm from '@/components/weather-form';
 import HistoricalWeather from '@/components/historical-weather';
+import { generateWeatherForecast } from '@/ai/flows/generate-weather-forecast';
+import { presets } from '@/lib/presets';
+import WeatherDisplay from '@/components/weather-display';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 
 export default async function Home() {
   const currentDate = new Date().toLocaleDateString('en-US', {
@@ -13,16 +17,28 @@ export default async function Home() {
   const historicalDataText = `On this day in the past, Mumbai experienced warm and humid conditions with temperatures around 88°F (31°C). Skies were partly cloudy with a chance of afternoon showers. Winds were moderate from the southwest.`;
 
   let historicalSummary = { summary: 'Historical weather data is currently unavailable. Please check your Gemini API key.' };
+  let presetForecasts: { title: string; forecast: string; }[] = [];
 
   if (process.env.GEMINI_API_KEY) {
     try {
-      historicalSummary = await summarizeHistoricalWeatherData({
+      const summaryPromise = summarizeHistoricalWeatherData({
         date: currentDate,
         location: defaultLocation,
         historicalData: historicalDataText,
       });
+
+      const forecastPromises = presets.map(p => generateWeatherForecast(p));
+
+      const [summary, ...forecasts] = await Promise.all([summaryPromise, ...forecastPromises]);
+      
+      historicalSummary = summary;
+      presetForecasts = forecasts.map((f, i) => ({
+        title: `Example Forecast for ${presets[i].city}`,
+        forecast: f.weeklyForecast
+      }));
+
     } catch (error) {
-      console.error('Error fetching historical weather data:', error);
+      console.error('Error fetching initial data:', error);
       historicalSummary = { summary: 'Could not fetch historical weather data. The AI service may be down.' };
     }
   }
@@ -50,6 +66,26 @@ export default async function Home() {
               date={currentDate}
               location={defaultLocation}
             />
+            {presetForecasts.length > 0 && (
+               <Card className="shadow-lg">
+                <CardHeader>
+                  <CardTitle className="font-headline text-2xl">Example Forecasts</CardTitle>
+                  <CardDescription>
+                    Here are some examples of AI-generated forecasts.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  {presetForecasts.map((pf, index) => (
+                    <div key={index}>
+                      <h3 className="font-bold text-lg">{pf.title}</h3>
+                       <div className="prose prose-sm dark:prose-invert max-w-none whitespace-pre-wrap p-4 rounded-md bg-primary/10 border-primary/20">
+                        {pf.forecast}
+                      </div>
+                    </div>
+                  ))}
+                </CardContent>
+              </Card>
+            )}
           </div>
         </div>
       </main>
