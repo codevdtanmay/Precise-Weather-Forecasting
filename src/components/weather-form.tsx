@@ -36,7 +36,8 @@ import {
   MapPin,
   Building,
 } from 'lucide-react';
-import React, { useEffect, useActionState, useState } from 'react';
+import React, { useEffect } from 'react';
+import { useActionState } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { Textarea } from './ui/textarea';
 import WeatherDisplay from './weather-display';
