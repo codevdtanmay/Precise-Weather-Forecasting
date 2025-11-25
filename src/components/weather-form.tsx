@@ -37,8 +37,7 @@ import {
   Building,
   Wand,
 } from 'lucide-react';
-import React, { useState } from 'react';
-import { useActionState } from 'react';
+import React, { useState, useActionState, useEffect } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { Textarea } from './ui/textarea';
 import WeatherDisplay from './weather-display';
@@ -167,19 +166,15 @@ export default function WeatherForm({ historicalDataText }: { historicalDataText
   const selectedCountry = form.watch('country');
   const selectedState = form.watch('state');
 
-  // Use a ref to track if the toast has been shown for the current error
-  const errorToastIdRef = React.useRef<string | number | undefined>(undefined);
-  
-  if (state.error && errorToastIdRef.current !== state.error) {
-    toast({
-      variant: 'destructive',
-      title: 'An error occurred',
-      description: state.error,
-    });
-    errorToastIdRef.current = state.error;
-  } else if (!state.error) {
-    errorToastIdRef.current = undefined;
-  }
+  useEffect(() => {
+    if (state.error) {
+      toast({
+        variant: 'destructive',
+        title: 'An error occurred',
+        description: state.error,
+      });
+    }
+  }, [state.error, toast]);
 
 
   return (
