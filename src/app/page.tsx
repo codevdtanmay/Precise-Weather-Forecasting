@@ -13,11 +13,21 @@ export default async function Home() {
   const location = 'San Francisco, CA';
   const historicalDataText = `On this day in the past, San Francisco experienced mild temperatures around 60°F with intermittent fog clearing by the afternoon. Winds were light from the west. No significant precipitation was recorded.`;
 
-  const historicalSummary = await summarizeHistoricalWeatherData({
-    date: currentDate,
-    location,
-    historicalData: historicalDataText,
-  });
+  let historicalSummary = { summary: 'Historical weather data is currently unavailable. Please check your Gemini API key.' };
+
+  if (process.env.GEMINI_API_KEY && process.env.GEMINI_API_KEY !== 'YOUR_API_KEY_HERE') {
+    try {
+      historicalSummary = await summarizeHistoricalWeatherData({
+        date: currentDate,
+        location,
+        historicalData: historicalDataText,
+      });
+    } catch (error) {
+      console.error('Error fetching historical weather data:', error);
+      historicalSummary = { summary: 'Could not fetch historical weather data. The AI service may be down.' };
+    }
+  }
+
 
   return (
     <div className="min-h-screen bg-background font-body text-foreground">
