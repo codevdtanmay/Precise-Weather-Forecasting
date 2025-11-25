@@ -14,7 +14,7 @@ export default async function Home() {
 
   let historicalSummary = { summary: 'Historical weather data is currently unavailable. Please check your Gemini API key.' };
 
-  if (process.env.GEMINI_API_KEY && process.env.GEMINI_API_KEY !== 'YOUR_API_KEY_HERE') {
+  if (process.env.GEMINI_API_KEY) {
     try {
       historicalSummary = await summarizeHistoricalWeatherData({
         date: currentDate,
